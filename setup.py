@@ -8,23 +8,24 @@ requirements = [
     "numpy",
     "pandas",
     "scikit-learn",
+    "astropy",
 ]
 
 setup(
-    name="kn_ztf_detection",
+    name="kndetect",
     version="0.0.1",
     author="Biswajit Biswas",
     author_email="biswas@apc.in2p3.fr",
     description="Kilonova detection module for Fink broker",
     long_description=readme,
     long_description_content_type="text/markdown",
-    url="https://github.com/b-biswas/kn_ztf_detection",
+    url="https://github.com/b-biswas/kndetect",
     include_package_data=True,
-    packages=["kn_ztf_detection"],
+    packages=["kndetect"],
     install_requires=requirements,
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    package_data={"kn_ztf_detection": ["data/*"]},
+    package_data={"kndetect": ["data/*"]},
 )
