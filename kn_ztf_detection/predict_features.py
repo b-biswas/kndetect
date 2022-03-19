@@ -157,7 +157,7 @@ def predict_band_features(band_df, pcs_arr, time_bin=.25, flux_lim=200, low_var_
     num_prediction_points = len(pcs_arr[0])
 
     if len(band_df) == 0:
-        features = np.zeros(int(len(get_features_name(num_pcs)) / 2)).tolist()
+        features = np.zeros(int(len(get_feature_names(num_pcs)) / 2)).tolist()
         return features
 
     max_loc = np.argmax(band_df['FLUXCAL'])
