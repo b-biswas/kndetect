@@ -1,5 +1,7 @@
 import numpy as np
+import pandas as pd
 from scipy.optimize import minimize
+from tqdm import tqdm
 
 def get_feature_names(npcs=3):
     """
@@ -181,7 +183,7 @@ def predict_band_features(band_df, pcs, time_bin=.25, flux_lim=200, low_var_indi
 
         # create a mapping from JD to index in the prediction.
         # For Example, midpoint is at index (num_prediction_points - 1) / 2. The middle of the prediction region.
-        map_dates_to_arr_index = np.around((band_df['MJD'].values - mid_point_date).to_numpy().astype(float) / time_bin + (num_prediction_points - 1) / 2)
+        map_dates_to_arr_index = np.around((band_df['MJD'].values - mid_point_date).astype(float) / time_bin + (num_prediction_points - 1) / 2)
         map_dates_to_arr_index = map_dates_to_arr_index.astype(int)
 
         # Initil guess for coefficients.
@@ -287,18 +289,19 @@ def extract_features_all_lightcurves(lc_df, key, pcs, filters):
         principal components to the used for the prediction
     filters: 
         list of filters/bands present in the lightcurves
+    n_cores: int 
+        number of cores to use
     """
     object_ids = np.unique(lc_df[key])
     feature_names = get_feature_names()
-    features["key"] = [] 
     features_df = {k: [] for k in feature_names}
+    features_df["key"] = [] 
     
-
-    for object_id in object_ids:
-
+    for object_id in tqdm(object_ids):
         object_lc = lc_df[lc_df[key]==object_id]
         features = extract_features_all_bands(pcs=pcs, filters=filters, lc=object_lc)
-        features_df["key"] = object_id
-
+        features_df["key"].append(object_id)
         for i, feature_name in enumerate(feature_names):
-            features_df[feature_name] = features[i]
+            features_df[feature_name].append(features[i])
+
+    return pd.DataFrame.from_dict(features_df)
