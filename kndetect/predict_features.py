@@ -1,5 +1,7 @@
 import numpy as np
+import pandas as pd
 from scipy.optimize import minimize
+from tqdm import tqdm
 
 def get_feature_names(npcs=3):
     """
@@ -103,7 +105,7 @@ def calc_residual(coeff, pcs_arr, light_curve_flux, light_curve_err, map_dates_t
     ----------
     coeff: np.array of shape [num_of_pcs]
         current value of coefficients
-    pcs_arr: np.array of shape [num_pcs, num_prediction_points]
+    pcs: np.array of shape [num_pcs, num_prediction_points]
         principal components to the used for the prediction
     light_curve_flux: pandas column of shape [num_recorded_points]
         segment of lightcurve that is to be fitted
@@ -127,7 +129,7 @@ def calc_residual(coeff, pcs_arr, light_curve_flux, light_curve_err, map_dates_t
     residual = np.sqrt(reconstruction_loss)
     return residual
 
-def predict_band_features(band_df, pcs_arr, time_bin=.25, flux_lim=200, low_var_indices=[1]):
+def predict_band_features(band_df, pcs, time_bin=.25, flux_lim=200, low_var_indices=[1]):
     """
     function to evaluate features for a band
 
@@ -135,7 +137,7 @@ def predict_band_features(band_df, pcs_arr, time_bin=.25, flux_lim=200, low_var_
     ----------
     band_df: pandas.DataFrame
         dataframe with the data of only one band of a lightcurve
-    pcs_arr: np.array of shape [num pc components, num prediction points/bins]
+    pcs: np.array of shape [num pc components, num prediction points/bins]
         For example, pcs_arr[0] will correspond the the first principal component.
     time_bin: float
         Width of time gap between two elements in PCs.
@@ -153,8 +155,8 @@ def predict_band_features(band_df, pcs_arr, time_bin=.25, flux_lim=200, low_var_
         coefficients of pcs, number of features, residual and maxflux.
     """
 
-    num_pcs = len(pcs_arr)
-    num_prediction_points = len(pcs_arr[0])
+    num_pcs = len(pcs)
+    num_prediction_points = len(pcs[0])
 
     if len(band_df) == 0:
         features = np.zeros(int(len(get_feature_names(num_pcs)) / 2)).tolist()
@@ -181,7 +183,7 @@ def predict_band_features(band_df, pcs_arr, time_bin=.25, flux_lim=200, low_var_
 
         # create a mapping from JD to index in the prediction.
         # For Example, midpoint is at index (num_prediction_points - 1) / 2. The middle of the prediction region.
-        map_dates_to_arr_index = np.around((band_df['MJD'].values - mid_point_date).to_numpy().astype(float) / time_bin + (num_prediction_points - 1) / 2)
+        map_dates_to_arr_index = np.around((band_df['MJD'].values - mid_point_date).astype(float) / time_bin + (num_prediction_points - 1) / 2)
         map_dates_to_arr_index = map_dates_to_arr_index.astype(int)
 
         # Initil guess for coefficients.
@@ -205,7 +207,7 @@ def predict_band_features(band_df, pcs_arr, time_bin=.25, flux_lim=200, low_var_
         result = minimize(
             calc_loss, initial_guess,
             args=(
-                pcs_arr, normalized_flux, normalized_err_bars,
+                pcs, normalized_flux, normalized_err_bars,
                 map_dates_to_arr_index, regularization_weight, low_var_indices),
             bounds=bounds)
 
@@ -216,7 +218,7 @@ def predict_band_features(band_df, pcs_arr, time_bin=.25, flux_lim=200, low_var_
         max_band_flux = max_flux
 
         # calculate residuals
-        residual = calc_residual(result.x, pcs_arr, normalized_flux, normalized_err_bars, map_dates_to_arr_index)
+        residual = calc_residual(result.x, pcs, normalized_flux, normalized_err_bars, map_dates_to_arr_index)
 
     else:
         coeff = np.zeros(num_pcs).tolist()
@@ -235,11 +237,8 @@ def extract_features_all_bands(pcs,  filters, lc):
     Extract features for all the bands of lightcurve
     Parameters
     ----------
-    pcs: pd.DataFrame
-        All principal components to be considered.
-        keys should be PCs names (1, 2, 3, ...),
-        values their amplitude at each epoch in the grid.
-        Order of PCs when calling pcs.keys() is important.
+    pcs: np.array of shape [num_pcs, num_prediction_points]
+        principal components to the used for the prediction
     time_bin: float
         Width of time gap between two elements in PCs.
     filters: list
@@ -263,18 +262,13 @@ def extract_features_all_bands(pcs,  filters, lc):
     time_bin = .25
     flux_lim=200
     low_var_indices=[1]
-
-    pcs_arr = []
-    for i in range(len(pcs.keys())):
-        pcs_arr.append(pcs[i + 1].values)
-    pcs_arr = np.array(pcs_arr)
     all_features = []
 
     for band in filters:
 
         band_df = lc[lc['FLT'] == band]
         features = predict_band_features(
-            band_df=band_df, pcs_arr=pcs_arr, time_bin=time_bin,
+            band_df=band_df, pcs=pcs, time_bin=time_bin,
             flux_lim=flux_lim, low_var_indices=low_var_indices)
 
         all_features.extend(features)
@@ -291,23 +285,23 @@ def extract_features_all_lightcurves(lc_df, key, pcs, filters):
         Columns must include: "MJD", "FLT", "FLUXCAL", "FLUXCALERR" and a key
     key: str
         Column name to identify each lightcurve to be fitted.
-    pcs: 
-        pcs to be used for the fitting
+    pcs: np.array of shape [num_pcs, num_prediction_points]
+        principal components to the used for the prediction
     filters: 
         list of filters/bands present in the lightcurves
-    lc:
+    n_cores: int 
+        number of cores to use
     """
     object_ids = np.unique(lc_df[key])
     feature_names = get_feature_names()
-    features["key"] = [] 
     features_df = {k: [] for k in feature_names}
+    features_df["key"] = [] 
     
-
-    for object_id in object_ids:
-
+    for object_id in tqdm(object_ids):
         object_lc = lc_df[lc_df[key]==object_id]
         features = extract_features_all_bands(pcs=pcs, filters=filters, lc=object_lc)
-        features_df["key"] = object_id
-
+        features_df["key"].append(object_id)
         for i, feature_name in enumerate(feature_names):
-            features_df[feature_name] = features[i]
+            features_df[feature_name].append(features[i])
+
+    return pd.DataFrame.from_dict(features_df)

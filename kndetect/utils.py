@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
+import os
 
-def load_pcs(fn, npcs):
+def load_pcs(fn=None, npcs=3):
     """ Load PC from disk into a Pandas DataFrame
     Parameters
     ----------
@@ -17,6 +18,11 @@ def load_pcs(fn, npcs):
         values their amplitude at each epoch in the grid.
         Order of PCs when calling pcs.keys() is important.
     """
+
+    if fn is None: 
+        curdir = os.path.dirname(os.path.abspath(__file__))
+        fn = curdir + '/data/mixed_pcs.csv'
+
     comp = pd.read_csv(fn)
     pcs = [] 
     for i in range(npcs):
