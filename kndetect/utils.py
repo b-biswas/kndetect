@@ -21,7 +21,7 @@ def load_pcs(fn=None, npcs=3):
 
     if fn is None: 
         curdir = os.path.dirname(os.path.abspath(__file__))
-        fn = curdir + '/data/mixed_pcs.csv'
+        fn = os.path.join(curdir, 'data/mixed_pcs.csv')
 
     comp = pd.read_csv(fn)
     pcs = [] 
