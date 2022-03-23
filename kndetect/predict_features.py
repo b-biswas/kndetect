@@ -3,6 +3,7 @@ import pandas as pd
 from scipy.optimize import minimize
 from tqdm import tqdm
 
+
 def get_feature_names(npcs=3):
     """
     Create the list of feature names depending on the number of principal components.
@@ -18,12 +19,12 @@ def get_feature_names(npcs=3):
         name of the features.
 
     """
-    names_root = [
-        'coeff' + str(i + 1) + '_' for i in range(npcs)] + [
-            'residuo_',
-            'maxflux_']
+    names_root = ["coeff" + str(i + 1) + "_" for i in range(npcs)] + [
+        "residuo_",
+        "maxflux_",
+    ]
 
-    return [i + j for j in ['g', 'r'] for i in names_root]
+    return [i + j for j in ["g", "r"] for i in names_root]
 
 
 def calc_prediction(coeff, pcs_arr):
@@ -49,7 +50,15 @@ def calc_prediction(coeff, pcs_arr):
     return predicted_lc
 
 
-def calc_loss(coeff, pcs_arr, light_curve_flux, light_curve_err, map_dates_to_arr_index, regularization_weight, low_var_indices=[1]):
+def calc_loss(
+    coeff,
+    pcs_arr,
+    light_curve_flux,
+    light_curve_err,
+    map_dates_to_arr_index,
+    regularization_weight,
+    low_var_indices=[1],
+):
     """
     function to calculate the loss to be optimized
 
@@ -79,7 +88,9 @@ def calc_loss(coeff, pcs_arr, light_curve_flux, light_curve_err, map_dates_to_ar
     # calculation of the reconstruction loss
     y_pred = calc_prediction(coeff, pcs_arr)
     real_flux = np.take(y_pred, map_dates_to_arr_index)
-    reconstruction_loss = np.sum(np.divide(np.square(real_flux - light_curve_flux), np.square(light_curve_err)))
+    reconstruction_loss = np.sum(
+        np.divide(np.square(real_flux - light_curve_flux), np.square(light_curve_err))
+    )
 
     # Calculate the regularization
 
@@ -97,7 +108,9 @@ def calc_loss(coeff, pcs_arr, light_curve_flux, light_curve_err, map_dates_to_ar
     return loss
 
 
-def calc_residual(coeff, pcs_arr, light_curve_flux, light_curve_err, map_dates_to_arr_index):
+def calc_residual(
+    coeff, pcs_arr, light_curve_flux, light_curve_err, map_dates_to_arr_index
+):
     """
     function to calculate residual of the fit
 
@@ -124,12 +137,17 @@ def calc_residual(coeff, pcs_arr, light_curve_flux, light_curve_err, map_dates_t
     real_flux = np.take(y_pred, map_dates_to_arr_index)
 
     diff = real_flux - light_curve_flux
-    reconstruction_loss = np.mean(np.divide(np.square(diff), np.square(light_curve_err)))
+    reconstruction_loss = np.mean(
+        np.divide(np.square(diff), np.square(light_curve_err))
+    )
 
     residual = np.sqrt(reconstruction_loss)
     return residual
 
-def predict_band_features(band_df, pcs, time_bin=.25, flux_lim=200, low_var_indices=[1]):
+
+def predict_band_features(
+    band_df, pcs, time_bin=0.25, flux_lim=200, low_var_indices=[1]
+):
     """
     function to evaluate features for a band
 
@@ -162,41 +180,44 @@ def predict_band_features(band_df, pcs, time_bin=.25, flux_lim=200, low_var_indi
         features = np.zeros(int(len(get_feature_names(num_pcs)) / 2)).tolist()
         return features
 
-    max_loc = np.argmax(band_df['FLUXCAL'])
-    max_flux = band_df['FLUXCAL'].iloc[max_loc]
+    max_loc = np.argmax(band_df["FLUXCAL"])
+    max_flux = band_df["FLUXCAL"].iloc[max_loc]
 
     # extract the prediction region
-    mid_point_date = band_df['MJD'].iloc[max_loc]
+    mid_point_date = band_df["MJD"].iloc[max_loc]
 
     prediction_duration = time_bin * (num_prediction_points - 1)
 
     start_date = mid_point_date - prediction_duration / 2
     end_date = mid_point_date + prediction_duration / 2
 
-    duration_index = (band_df['MJD'] > start_date) & (band_df['MJD'] < end_date)
+    duration_index = (band_df["MJD"] > start_date) & (band_df["MJD"] < end_date)
     band_df = band_df[duration_index]
 
     if (max_flux > flux_lim) & (len(band_df) > 2):
 
         # update the location
-        max_loc = np.argmax(band_df['FLUXCAL'])
+        max_loc = np.argmax(band_df["FLUXCAL"])
 
         # create a mapping from JD to index in the prediction.
         # For Example, midpoint is at index (num_prediction_points - 1) / 2. The middle of the prediction region.
-        map_dates_to_arr_index = np.around((band_df['MJD'].values - mid_point_date).astype(float) / time_bin + (num_prediction_points - 1) / 2)
+        map_dates_to_arr_index = np.around(
+            (band_df["MJD"].values - mid_point_date).astype(float) / time_bin
+            + (num_prediction_points - 1) / 2
+        )
         map_dates_to_arr_index = map_dates_to_arr_index.astype(int)
 
         # Initil guess for coefficients.
         initial_guess = np.zeros(num_pcs) + 0.5
 
         # Calculating the regularization weight to make it comparable to reconstruction loss part.
-        err_bar_of_max_flux = band_df['FLUXCALERR'].iloc[max_loc]
+        err_bar_of_max_flux = band_df["FLUXCALERR"].iloc[max_loc]
 
         regularization_weight = np.square(max_flux / err_bar_of_max_flux)
 
         # normalize the flux and errorbars
-        normalized_flux = band_df['FLUXCAL'].values / max_flux
-        normalized_err_bars = band_df['FLUXCALERR'].values / max_flux
+        normalized_flux = band_df["FLUXCAL"].values / max_flux
+        normalized_err_bars = band_df["FLUXCALERR"].values / max_flux
 
         # bounds for the coefficient
         bounds = []
@@ -205,11 +226,18 @@ def predict_band_features(band_df, pcs, time_bin=.25, flux_lim=200, low_var_indi
 
         # minimize the cost function
         result = minimize(
-            calc_loss, initial_guess,
+            calc_loss,
+            initial_guess,
             args=(
-                pcs, normalized_flux, normalized_err_bars,
-                map_dates_to_arr_index, regularization_weight, low_var_indices),
-            bounds=bounds)
+                pcs,
+                normalized_flux,
+                normalized_err_bars,
+                map_dates_to_arr_index,
+                regularization_weight,
+                low_var_indices,
+            ),
+            bounds=bounds,
+        )
 
         # extract the coefficients
         coeff = list(result.x)
@@ -218,7 +246,9 @@ def predict_band_features(band_df, pcs, time_bin=.25, flux_lim=200, low_var_indi
         max_band_flux = max_flux
 
         # calculate residuals
-        residual = calc_residual(result.x, pcs, normalized_flux, normalized_err_bars, map_dates_to_arr_index)
+        residual = calc_residual(
+            result.x, pcs, normalized_flux, normalized_err_bars, map_dates_to_arr_index
+        )
 
     else:
         coeff = np.zeros(num_pcs).tolist()
@@ -232,7 +262,8 @@ def predict_band_features(band_df, pcs, time_bin=.25, flux_lim=200, low_var_indi
 
     return features
 
-def extract_features_all_bands(pcs,  filters, lc):
+
+def extract_features_all_bands(pcs, filters, lc):
     """
     Extract features for all the bands of lightcurve
     Parameters
@@ -259,21 +290,26 @@ def extract_features_all_bands(pcs,  filters, lc):
         Order is all features from first filter, then all features from
         second filters, etc.
     """
-    time_bin = .25
-    flux_lim=200
-    low_var_indices=[1]
+    time_bin = 0.25
+    flux_lim = 200
+    low_var_indices = [1]
     all_features = []
 
     for band in filters:
 
-        band_df = lc[lc['FLT'] == band]
+        band_df = lc[lc["FLT"] == band]
         features = predict_band_features(
-            band_df=band_df, pcs=pcs, time_bin=time_bin,
-            flux_lim=flux_lim, low_var_indices=low_var_indices)
+            band_df=band_df,
+            pcs=pcs,
+            time_bin=time_bin,
+            flux_lim=flux_lim,
+            low_var_indices=low_var_indices,
+        )
 
         all_features.extend(features)
 
     return all_features
+
 
 def extract_features_all_lightcurves(lc_df, key, pcs, filters):
     """
@@ -281,24 +317,24 @@ def extract_features_all_lightcurves(lc_df, key, pcs, filters):
 
     Parameters:
     lc_df: pandas DataFrame
-        dataframe with data of differnet lightcurves. 
+        dataframe with data of differnet lightcurves.
         Columns must include: "MJD", "FLT", "FLUXCAL", "FLUXCALERR" and a key
     key: str
         Column name to identify each lightcurve to be fitted.
     pcs: np.array of shape [num_pcs, num_prediction_points]
         principal components to the used for the prediction
-    filters: 
+    filters:
         list of filters/bands present in the lightcurves
-    n_cores: int 
+    n_cores: int
         number of cores to use
     """
     object_ids = np.unique(lc_df[key])
     feature_names = get_feature_names()
     features_df = {k: [] for k in feature_names}
-    features_df["key"] = [] 
-    
+    features_df["key"] = []
+
     for object_id in tqdm(object_ids):
-        object_lc = lc_df[lc_df[key]==object_id]
+        object_lc = lc_df[lc_df[key] == object_id]
         features = extract_features_all_bands(pcs=pcs, filters=filters, lc=object_lc)
         features_df["key"].append(object_id)
         for i, feature_name in enumerate(feature_names):
