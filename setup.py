@@ -8,8 +8,7 @@ requirements = [
     "numpy",
     "pandas",
     "scikit-learn",
-    "astropy"
-    "tqdm",
+    "astropy" "tqdm",
 ]
 
 setup(

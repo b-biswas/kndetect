@@ -1,6 +1,7 @@
+astropy
 matplotlib
 numpy
 pandas
+pre-commit
 scikit-learn
-astropy
 tqdm
