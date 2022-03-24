@@ -89,7 +89,6 @@ def predict_kn_score(clf, features_df):
 
     probabilities = clf.predict_proba(
         features_df[filtered_indices][feature_col_names].values,
-        check_input=False,
     )
     probabilities_notkne = np.zeros(len(features_df))
     probabilities_kne = np.zeros(len(features_df))
