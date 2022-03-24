@@ -4,6 +4,20 @@ import numpy as np
 import pandas as pd
 
 
+def get_data_dir_path():
+    """Function to return path to the data folder of kndetect
+
+    Returns
+    -------
+    data_dir: str
+        path to data folder
+    """
+    curdir = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(curdir, "data")
+
+    return data_dir
+
+
 def load_pcs(fn=None, npcs=3):
     """Load PC from disk into a Pandas DataFrame
 
@@ -23,8 +37,8 @@ def load_pcs(fn=None, npcs=3):
     """
 
     if fn is None:
-        curdir = os.path.dirname(os.path.abspath(__file__))
-        fn = os.path.join(curdir, "data/mixed_pcs.csv")
+        data_dir = get_data_dir_path()
+        fn = os.path.join(data_dir, "mixed_pcs.csv")
 
     comp = pd.read_csv(fn)
     pcs = []
