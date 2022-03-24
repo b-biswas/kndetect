@@ -80,6 +80,13 @@ def predict_kn_score(clf, features_df):
     """
     feature_col_names = get_feature_names()
     filtered_indices = filter_no_coeff_events(features_df)
+    # If all alerts are flagged as bad
+
+    if len(features_df[filtered_indices]) == (0, len(feature_col_names)):
+        probabilities_ = np.zeros((len(features_df), 2), dtype=float)
+        filtered_indices = [False] * len(features_df)
+        return probabilities_, filtered_indices
+
     probabilities = clf.predict_proba(
         features_df[filtered_indices][feature_col_names].values
     )
