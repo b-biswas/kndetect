@@ -3,5 +3,5 @@ matplotlib
 numpy
 pandas
 pre-commit
-scikit-learn
+scikit-learn<=1.0
 tqdm
