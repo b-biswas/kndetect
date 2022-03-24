@@ -74,7 +74,7 @@ def train_classifier(features_df):
     clf = RandomForestClassifier(n_estimators=30, max_depth=13)
 
     features = features_df[feature_names]
-    clf.fit(features, features_df["y_true"])
+    clf.fit(features.values, features_df["y_true"].values)
 
     y_pred = clf.predict(features)
     y_score = clf.predict_proba(features)
