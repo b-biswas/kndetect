@@ -335,6 +335,7 @@ def extract_features_all_lightcurves(lc_df, key, pcs, filters):
 
     for object_id in tqdm(object_ids):
         object_lc = lc_df[lc_df[key] == object_id]
+        object_lc = object_lc[object_lc['FLUXCAL'] == object_lc['FLUXCAL']]
         features = extract_features_all_bands(pcs=pcs, filters=filters, lc=object_lc)
         features_df["key"].append(object_id)
         for i, feature_name in enumerate(feature_names):
