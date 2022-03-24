@@ -194,7 +194,7 @@ def predict_band_features(
     duration_index = (band_df["MJD"] > start_date) & (band_df["MJD"] < end_date)
     band_df = band_df[duration_index]
 
-    if (max_flux > flux_lim) & (len(band_df) > 2):
+    if (max_flux > flux_lim) & (len(band_df) >= 2):
 
         # update the location
         max_loc = np.argmax(band_df["FLUXCAL"])
