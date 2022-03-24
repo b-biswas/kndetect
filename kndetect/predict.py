@@ -3,7 +3,7 @@ import pickle
 
 import numpy as np
 
-from kndetect.predict_features import get_feature_names
+from kndetect.features import get_feature_names
 from kndetect.utils import get_data_dir_path
 
 

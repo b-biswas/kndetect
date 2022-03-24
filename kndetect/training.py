@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
-from kndetect.predict_features import get_feature_names
+from kndetect.features import get_feature_names
 from kndetect.utils import get_event_type
 
 
