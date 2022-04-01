@@ -263,7 +263,7 @@ def predict_band_features(
     return features
 
 
-def extract_features_all_bands(pcs, filters, lc):
+def extract_features_all_bands(pcs, filters, lc, flux_lim, time_bin):
     """
     Extract features for all the bands of lightcurve
     Parameters
@@ -282,6 +282,10 @@ def extract_features_all_bands(pcs, filters, lc):
     low_var_indices: list
         Indices along which variance is low.
         Default value is set to [1] which regularizes the 2nd PC
+    flux_lim: int/float
+        flux value above which no predictions are made for a band
+    time_bin:
+        duration of a time bin in days. For eg, .25 means 6 hours
 
     Returns
     -------
@@ -290,8 +294,7 @@ def extract_features_all_bands(pcs, filters, lc):
         Order is all features from first filter, then all features from
         second filters, etc.
     """
-    time_bin = 0.25
-    flux_lim = 200
+
     low_var_indices = [1]
     all_features = []
 
@@ -311,7 +314,27 @@ def extract_features_all_bands(pcs, filters, lc):
     return all_features
 
 
-def extract_features_all_lightcurves(lc_df, key, pcs, filters):
+def extract_mimic_alerts_region(lc, flux_lim):
+    """
+    returns 30 days of alerts data, form a randomly selected point
+
+    Parameters
+    ----------
+    lc: pd.DataFrame
+        pandas dataframe with lightcurve data from which segment is to be extracted.
+    """
+    lc_above_threshold = lc[lc["FLUXCAL"] > flux_lim]
+    if len(lc_above_threshold) == 0:
+        return lc_above_threshold, 0
+    current_date = lc_above_threshold.sample()["MJD"].values[0]
+    lc_segment = lc[
+        np.logical_and(lc["MJD"] >= (current_date - 30), lc["MJD"] <= current_date)
+    ]
+
+    return lc_segment, current_date
+
+
+def extract_features_all_lightcurves(lc_df, key, pcs, filters, mimic_alerts=False):
     """
     extracts features for all lightcurves in df
 
@@ -323,22 +346,34 @@ def extract_features_all_lightcurves(lc_df, key, pcs, filters):
         Column name to identify each lightcurve to be fitted.
     pcs: np.array of shape [num_pcs, num_prediction_points]
         principal components to the used for the prediction
-    filters:
+    filters: list
         list of filters/bands present in the lightcurves
-    n_cores: int
-        number of cores to use
+    minic_alerts: bool
+        boolean value to choose beetween extracting features for complete light curves or partical lightcurves.
     """
+    time_bin = 0.25  # 6 hours
+    flux_lim = 200
     object_ids = np.unique(lc_df[key])
     feature_names = get_feature_names()
     features_df = {k: [] for k in feature_names}
     features_df["key"] = []
+    current_dates = []
 
     for object_id in tqdm(object_ids):
         object_lc = lc_df[lc_df[key] == object_id]
         object_lc = object_lc[object_lc["FLUXCAL"] == object_lc["FLUXCAL"]]
-        features = extract_features_all_bands(pcs=pcs, filters=filters, lc=object_lc)
+        if mimic_alerts:
+            object_lc, current_date = extract_mimic_alerts_region(object_lc, flux_lim)
+            current_dates.append(current_date)
+        features = extract_features_all_bands(
+            pcs=pcs, filters=filters, lc=object_lc, flux_lim=flux_lim, time_bin=time_bin
+        )
         features_df["key"].append(object_id)
         for i, feature_name in enumerate(feature_names):
             features_df[feature_name].append(features[i])
+
+    if mimic_alerts:
+        features_df["current_dates"] = current_date
+        return pd.DataFrame.from_dict(features_df)
 
     return pd.DataFrame.from_dict(features_df)
