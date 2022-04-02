@@ -1,2 +1,3 @@
 include kndetect/data/mixed_pcs.csv
-include kndetect/data/complete.pkl
+include kndetect/data/models/complete.pkl
+include kndetect/data/models/partial.pkl
