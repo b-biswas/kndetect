@@ -25,7 +25,7 @@ def load_classifier(classifier_name):
         raise ValueError("Such a model does not exist")
 
     data_dir = get_data_dir_path()
-    fn = os.path.join(data_dir, classifier_name)
+    fn = os.path.join(data_dir, "models", classifier_name)
 
     clf = pickle.load(open(fn, "rb"))
 
