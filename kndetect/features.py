@@ -379,7 +379,7 @@ def extract_features_all_lightcurves(lc_df, key, pcs, filters, mimic_alerts=Fals
             features_df[feature_name].append(features[i])
 
     if mimic_alerts:
-        features_df["current_dates"] = current_date
+        features_df["current_dates"] = current_dates
         return pd.DataFrame.from_dict(features_df)
 
     return pd.DataFrame.from_dict(features_df)
