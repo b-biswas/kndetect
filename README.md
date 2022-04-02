@@ -1,1 +1,1 @@
-# kn_ztf_detection
+# KN detection module for Fink

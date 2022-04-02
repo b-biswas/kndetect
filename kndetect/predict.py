@@ -25,7 +25,7 @@ def load_classifier(classifier_name):
         raise ValueError("Such a model does not exist")
 
     data_dir = get_data_dir_path()
-    fn = os.path.join(data_dir, classifier_name)
+    fn = os.path.join(data_dir, "models", classifier_name)
 
     clf = pickle.load(open(fn, "rb"))
 
@@ -82,7 +82,7 @@ def predict_kn_score(clf, features_df):
     filtered_indices = filter_no_coeff_events(features_df)
     # If all alerts are flagged as bad
 
-    if len(features_df[filtered_indices]) == (0, len(feature_col_names)):
+    if len(features_df[filtered_indices]) == 0:
         probabilities_ = np.zeros((len(features_df), 2), dtype=float)
         filtered_indices = [False] * len(features_df)
         return probabilities_, filtered_indices
