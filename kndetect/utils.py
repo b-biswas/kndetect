@@ -158,3 +158,36 @@ def get_event_type(
         return event_types, event_names
 
     return event_types
+
+
+def extract_mimic_alerts_region(lc, flux_lim=None, current_date=None, duration=None):
+    """
+    returns 30 days of alerts data, form a randomly selected point
+
+    Parameters
+    ----------
+    lc: pd.DataFrame
+        pandas dataframe with lightcurve data from which segment is to be extracted.
+    flux_lim: int/float
+        flux value above which no predictions are made for a band
+    current_date:
+        end date of the 30 days period if available.
+        Otherwise a date with flux > flux_lim (any band) is chosen
+    duration: int/float
+        determines how long the extracted lightcurves durations are.
+        used to calcualte the start date of extracted region.
+    """
+    if current_date is None:
+        lc_above_threshold = lc[lc["FLUXCAL"] > flux_lim]
+        if len(lc_above_threshold) == 0:
+            return lc_above_threshold, 0
+        current_date = lc_above_threshold.sample()["MJD"].values[0]
+
+    if duration is None:
+        start_date = np.amin(lc["MJD"].values)
+    else:
+        start_date = current_date - duration
+
+    lc_segment = lc[np.logical_and(lc["MJD"] >= start_date, lc["MJD"] <= current_date)]
+
+    return lc_segment, current_date

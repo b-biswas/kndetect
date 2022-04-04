@@ -3,6 +3,8 @@ import pandas as pd
 from scipy.optimize import minimize
 from tqdm import tqdm
 
+from kndetect.utils import extract_mimic_alerts_region
+
 
 def get_feature_names(npcs=3):
     """
@@ -312,32 +314,6 @@ def extract_features_all_bands(pcs, filters, lc, flux_lim, time_bin):
         all_features.extend(features)
 
     return all_features
-
-
-def extract_mimic_alerts_region(lc, flux_lim=None, current_date=None):
-    """
-    returns 30 days of alerts data, form a randomly selected point
-
-    Parameters
-    ----------
-    lc: pd.DataFrame
-        pandas dataframe with lightcurve data from which segment is to be extracted.
-    flux_lim: int/float
-        flux value above which no predictions are made for a band
-    current_date:
-        end date of the 30 days period if available.
-        Otherwise a date with flux > flux_lim (any band) is chosen
-    """
-    if current_date is None:
-        lc_above_threshold = lc[lc["FLUXCAL"] > flux_lim]
-        if len(lc_above_threshold) == 0:
-            return lc_above_threshold, 0
-        current_date = lc_above_threshold.sample()["MJD"].values[0]
-    lc_segment = lc[
-        np.logical_and(lc["MJD"] >= (current_date - 30), lc["MJD"] <= current_date)
-    ]
-
-    return lc_segment, current_date
 
 
 def extract_features_all_lightcurves(lc_df, key, pcs, filters, mimic_alerts=False):
