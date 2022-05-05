@@ -99,7 +99,7 @@ def calc_loss(
     # Regularize the second coefficient
     regularization_term = 0
     if low_var_indices is not None:
-        regularization_term = np.sum(np.abs(coeff[low_var_indices[:]]))
+        regularization_term = np.sum(np.square(coeff[low_var_indices[:]]))
 
     # Regularize negative pcs
     neg_coeff = coeff[coeff < 0]
