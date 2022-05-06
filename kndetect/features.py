@@ -59,7 +59,7 @@ def calc_loss(
     light_curve_err,
     map_dates_to_arr_index,
     regularization_weight,
-    low_var_indices=[1],
+    low_var_indices=[1, 2],
 ):
     """
     function to calculate the loss to be optimized
@@ -80,7 +80,7 @@ def calc_loss(
         weights given to the regularization term
     low_var_indices: list
         Indices along which variance is low.
-        Default value is set to [1] which regularizes the 2nd PC
+        Default value is set to [1, 2] which regularizes the 2nd and 3rd PCs
 
     Returns
     -------
@@ -99,11 +99,11 @@ def calc_loss(
     # Regularize the second coefficient
     regularization_term = 0
     if low_var_indices is not None:
-        regularization_term = np.sum(np.abs(coeff[low_var_indices[:]]))
+        regularization_term = np.sum(np.square(coeff[low_var_indices[:]]))
 
-    # Regularize negative pcs
-    neg_coeff = coeff[coeff < 0]
-    regularization_term = regularization_term + np.sum(np.abs(neg_coeff))
+    # Regularize negative pcscoeff = 0
+    if coeff[0] < 0:
+        regularization_term = regularization_term + np.square(coeff[0])
 
     loss = reconstruction_loss + regularization_term * regularization_weight
 
@@ -148,7 +148,7 @@ def calc_residual(
 
 
 def predict_band_features(
-    band_df, pcs, time_bin=0.25, flux_lim=200, low_var_indices=[1]
+    band_df, pcs, time_bin=0.25, flux_lim=200, low_var_indices=[1, 2]
 ):
     """
     function to evaluate features for a band
@@ -166,7 +166,7 @@ def predict_band_features(
         Note that all the points in the band is used for the fit provided that max flux in the band > flux_lim
     low_var_indices: list
         Indices along which variance is low.
-        Default value is set to [1] which regularizes the 2nd PC
+        Default value is set to [1, 2] which regularizes the 2nd and 3rd PCs
 
     Returns
     -------
@@ -283,7 +283,7 @@ def extract_features_all_bands(pcs, filters, lc, flux_lim, time_bin):
         Note that all the points in the band is used for the fit provided that max flux in the band > flux_lim
     low_var_indices: list
         Indices along which variance is low.
-        Default value is set to [1] which regularizes the 2nd PC
+        Default value is set to [1, 2] which regularizes the 2nd, 3rd PCs
     flux_lim: int/float
         flux value above which no predictions are made for a band
     time_bin:
@@ -297,7 +297,7 @@ def extract_features_all_bands(pcs, filters, lc, flux_lim, time_bin):
         second filters, etc.
     """
 
-    low_var_indices = [1]
+    low_var_indices = [1, 2]
     all_features = []
 
     for band in filters:
