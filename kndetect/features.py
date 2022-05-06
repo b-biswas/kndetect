@@ -102,8 +102,9 @@ def calc_loss(
         regularization_term = np.sum(np.square(coeff[low_var_indices[:]]))
 
     # Regularize negative pcs
-    neg_coeff = coeff[coeff < 0]
-    regularization_term = regularization_term + np.sum(np.abs(neg_coeff))
+    if coeff[0] < 0:
+        neg_coeff = coeff[0]
+    regularization_term = regularization_term + np.sum(np.square(neg_coeff))
 
     loss = reconstruction_loss + regularization_term * regularization_weight
 
