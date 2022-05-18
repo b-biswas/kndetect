@@ -377,7 +377,7 @@ def plot_contamination_statistics(ax, test_features_df, prediction_type_nos):
         shadow=True,
         prop={"size": 25},
     )
-    plt.xlim(right=np.max(performance_statistics_df.loc[1].values) * 120 / 100)
+    plt.xlim(right=np.max(performance_statistics_df.loc[1].values) * 125 / 100)
 
 
 def get_performance_statistics_df(test_features_df, prediction_type_nos):

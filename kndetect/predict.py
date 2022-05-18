@@ -50,7 +50,7 @@ def filter_no_coeff_events(features_df):
 
     if not {"coeff1_g", "coeff1_r"}.issubset(features_df.columns):
         raise ValueError("The features column names are incorrect")
-    zeros = np.logical_or(
+    zeros = np.logical_and(
         features_df["coeff1_g"].values == 0, features_df["coeff1_r"].values == 0
     )
     filtered_indices = ~zeros
