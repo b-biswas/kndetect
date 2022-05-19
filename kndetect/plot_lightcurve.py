@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap
+from sklearn import metrics
 
 from kndetect.features import calc_prediction
 from kndetect.utils import extract_mimic_alerts_region, snana_ob_type_name
@@ -419,3 +421,65 @@ def get_performance_statistics_df(test_features_df, prediction_type_nos):
     stat_df = pd.DataFrame(prediction_stat)
     performance_stats = stat_df.reindex(sorted(stat_df.columns), axis=1)
     return performance_stats
+
+
+def plot_confusion_matrix(
+    ax,
+    y_true,
+    y_pred,
+    cmap=LinearSegmentedColormap.from_list("", ["#FFFFFF", "#15284F"]),
+):
+    """
+    This function prints and plots the confusion matrix.
+
+    Parameters
+    ----------
+    ax: matplotlib.axes
+        axes on which plot is to be generated
+    cmap: matplotlib colormap
+        color map for plotting
+    :return:
+    """
+
+    # Compute confusion matrix
+    cm = metrics.confusion_matrix(y_true, y_pred)
+    cm = cm / len(y_true)
+    print(cm)
+    # Only use the labels that appear in the data
+    classes = ["non-KN", "KN"]
+
+    # fig, ax = plt.subplots()
+    _ = ax.imshow(cm, interpolation="nearest", cmap=cmap)
+    # ax.figure.colorbar(im, ax=ax)
+    # We want to show all ticks...
+    ax.set(
+        xticks=np.arange(cm.shape[1]),
+        yticks=np.arange(cm.shape[0]),
+        # ... and label them with the respective list entries
+        xticklabels=classes,
+        yticklabels=classes,
+    )
+
+    ax.tick_params(axis="both", labelsize=25)
+    ax.set_xlabel("Predicted label", fontsize=30)
+    ax.set_ylabel("True label", fontsize=30)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=0, ha="center", rotation_mode="anchor")
+    plt.yticks(rotation="vertical", va="center")
+
+    # Loop over data dimensions and create text annotations.
+    thresh = cm.max() / 2.0
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(
+                j,
+                i,
+                f"{cm[i, j]*100:.2f}%",
+                ha="center",
+                va="center",
+                color="white" if cm[i, j] > thresh else "black",
+                fontsize=25,
+            )
+    # fig.tight_layout()
+    ax.axis("equal")
