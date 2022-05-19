@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
 from kndetect.features import get_feature_names
+from kndetect.predict import filter_no_coeff_events
 from kndetect.utils import get_event_type
 
 
@@ -72,6 +73,8 @@ def train_classifier(features_df):
     assert set(feature_names + ["y_true"]).issubset(features_df.columns)
 
     clf = RandomForestClassifier(n_estimators=30, max_depth=13)
+
+    features_df = features_df[filter_no_coeff_events(features_df)]
 
     features = features_df[feature_names]
     clf.fit(features.values, features_df["y_true"].values)

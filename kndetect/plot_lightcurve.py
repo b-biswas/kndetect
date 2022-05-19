@@ -1,8 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap
+from sklearn import metrics
 
 from kndetect.features import calc_prediction
-from kndetect.utils import extract_mimic_alerts_region
+from kndetect.utils import extract_mimic_alerts_region, snana_ob_type_name
 
 
 def plot_light_curve(
@@ -301,3 +304,182 @@ def plot_predicted_bands(
     plt.tight_layout()
 
     return fig
+
+
+def plot_contamination_statistics(ax, test_features_df, prediction_type_nos):
+    """
+    plot displaying total number of events and number of events correctly classified for each event type.
+    Parameters
+    ----------
+    ax: matplotlib.axes
+        axes on which plot is to be made
+    """
+
+    performance_statistics_df = get_performance_statistics_df(
+        test_features_df, prediction_type_nos
+    )
+
+    col_type_nos = np.array(performance_statistics_df.columns)
+    # print(col_type_nos)
+    pred_col_names = [snana_ob_type_name(item) for item in prediction_type_nos]
+    non_pred_types = col_type_nos[~np.isin(col_type_nos, prediction_type_nos)]
+    # print(pred_col_names)
+    non_pred_type_names = [snana_ob_type_name(item) for item in non_pred_types]
+    col_type_names = [snana_ob_type_name(item) for item in col_type_nos]
+
+    # print(col_type_nos)
+    # print(non_pred_types)
+
+    # print(np.where(np.in1d(non_pred_types, col_type_nos)))
+    ax.barh(
+        col_type_names,
+        performance_statistics_df.loc[1],
+        alpha=0.6,
+        tick_label=col_type_names,
+        color="#D5D5D3",
+        ec="black",
+        linewidth=1,
+        label="Total events",
+    )
+    ax.barh(
+        non_pred_type_names,
+        performance_statistics_df[non_pred_types].loc[0],
+        alpha=1,
+        color="#F5622E",
+        ec="black",
+        label="Correct non-KN",
+    )
+    ax.barh(
+        pred_col_names,
+        performance_statistics_df[prediction_type_nos].loc[0],
+        alpha=1,
+        color="#3C8DFF",
+        ec="black",
+        label="Correct KN",
+    )
+    # plt.rc('ytick', labelsize=15)
+    # plt.rc('xtick', labelsize=15)
+    plt.xlabel("Number of events", fontsize=25)
+    ax.tick_params(axis="both", labelsize=25)
+    # print(col_type_nos)
+    for i, v in enumerate(col_type_nos):
+        ax.text(
+            performance_statistics_df[v].values[1] + 10,
+            i - 0.1,
+            f"{performance_statistics_df[v].values[0] / performance_statistics_df[v].values[1] * 100:.2f}%",
+            color="#15284F",
+            fontweight="bold",
+            fontsize=20,
+        )
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.05),
+        ncol=3,
+        fancybox=True,
+        shadow=True,
+        prop={"size": 25},
+    )
+    plt.xlim(right=np.max(performance_statistics_df.loc[1].values) * 125 / 100)
+
+
+def get_performance_statistics_df(test_features_df, prediction_type_nos):
+    """
+    functions to evaluate performance for each event type
+
+    Returns
+    -------
+    performance_stats: pandas.DataFrame
+        df with number of events of each type: correctly classified, total number of events of the type and
+        number of events of the type in training set
+    """
+    prediction_stat = {}
+    for i, object_id in enumerate(test_features_df["key"]):
+        # print(1)
+        type_no = test_features_df["type"].values[
+            np.where(test_features_df["key"] == object_id)
+        ][0]
+        # print(self.train_sample_numbers)
+        # num_training_events = sample_numbers_train[type_no]
+        # if num_training_events == 0:
+        #    type_no = 0
+
+        if type_no not in prediction_stat:
+            # prediction_stat[type_no] = [0, 1, num_training_events]
+            prediction_stat[type_no] = [0, 1]
+        else:
+            prediction_stat[type_no][1] = prediction_stat[type_no][1] + 1
+
+        if (type_no in prediction_type_nos) & (
+            test_features_df["y_pred_score"].values[i] >= 0.5
+        ):
+            prediction_stat[type_no][0] = prediction_stat[type_no][0] + 1
+
+        elif (test_features_df["y_pred_score"].values[i] < 0.5) & (
+            type_no not in prediction_type_nos
+        ):
+            prediction_stat[type_no][0] = prediction_stat[type_no][0] + 1
+    stat_df = pd.DataFrame(prediction_stat)
+    performance_stats = stat_df.reindex(sorted(stat_df.columns), axis=1)
+    return performance_stats
+
+
+def plot_confusion_matrix(
+    ax,
+    y_true,
+    y_pred,
+    cmap=LinearSegmentedColormap.from_list("", ["#FFFFFF", "#15284F"]),
+):
+    """
+    This function prints and plots the confusion matrix.
+
+    Parameters
+    ----------
+    ax: matplotlib.axes
+        axes on which plot is to be generated
+    cmap: matplotlib colormap
+        color map for plotting
+    :return:
+    """
+
+    # Compute confusion matrix
+    cm = metrics.confusion_matrix(y_true, y_pred)
+    cm = cm / len(y_true)
+    print(cm)
+    # Only use the labels that appear in the data
+    classes = ["non-KN", "KN"]
+
+    # fig, ax = plt.subplots()
+    _ = ax.imshow(cm, interpolation="nearest", cmap=cmap)
+    # ax.figure.colorbar(im, ax=ax)
+    # We want to show all ticks...
+    ax.set(
+        xticks=np.arange(cm.shape[1]),
+        yticks=np.arange(cm.shape[0]),
+        # ... and label them with the respective list entries
+        xticklabels=classes,
+        yticklabels=classes,
+    )
+
+    ax.tick_params(axis="both", labelsize=25)
+    ax.set_xlabel("Predicted label", fontsize=30)
+    ax.set_ylabel("True label", fontsize=30)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=0, ha="center", rotation_mode="anchor")
+    plt.yticks(rotation="vertical", va="center")
+
+    # Loop over data dimensions and create text annotations.
+    thresh = cm.max() / 2.0
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(
+                j,
+                i,
+                f"{cm[i, j]*100:.2f}%",
+                ha="center",
+                va="center",
+                color="white" if cm[i, j] > thresh else "black",
+                fontsize=25,
+            )
+    # fig.tight_layout()
+    ax.axis("equal")
