@@ -483,3 +483,146 @@ def plot_confusion_matrix(
             )
     # fig.tight_layout()
     ax.axis("equal")
+
+
+def plot_features_correlation_helper(
+    class_features_df,
+    bands,
+    num_pc_components,
+    color_band_dict=None,
+    fig=None,
+    x_limits=None,
+    y_limits=None,
+    mark_xlabel=False,
+    mark_ylabel=False,
+    band_map=None,
+    set_ax_title=False,
+    label="",
+):
+    """
+    plots correlations between PCs of each band for only 1 class of data: ex KN
+    class_features_df: dataframe of events of current class (KN and non-KN)
+    bands: bands for which plots are to be generated
+    color_band_dict: colors to be used for corresponding bands
+    fig: fig on which plot is generated. If None, new fig is created
+    x_limits: x limits of the plot
+    y_limits: y limits of the plot
+    mark_xlabel: mark x label or not
+    mark_ylabel: to mark y label or not
+    band_map: renaming bands/filter/channel name in plots
+    set_ax_title: title of the axes ojbect on which plot is made
+    label: string label of the current class (ex "KN" or "non-KN")
+    :return: figure with the plots
+    """
+    num_rows = len(bands)
+    num_cols = int(num_pc_components * (num_pc_components - 1) / 2)
+    if fig is None:
+        fig, axs = plt.subplots(
+            num_rows, num_cols, figsize=(num_rows * 5, num_cols * 5)
+        )
+        # fig.subplots_adjust(wspace=.5,hspace=.5)
+        ax_list = fig.axes
+    else:
+        ax_list = fig.axes
+
+    for i, band in enumerate(bands):
+        for x in range(num_pc_components):
+            for y in range(x):
+                ax_current = ax_list[int(i * num_cols + (x - 1) * (x) / 2 + y)]
+                colx_name = str(band) + "_pc_" + str(x + 1)
+                coly_name = str(band) + "_pc_" + str(y + 1)
+                if mark_xlabel:
+                    ax_current.set_xlabel("PC" + str(x + 1), fontsize=20)
+                if mark_ylabel:
+                    ax_current.set_ylabel("PC" + str(y + 1), fontsize=20)
+                PCx = class_features_df[colx_name].values
+                PCy = class_features_df[coly_name].values
+                if color_band_dict is not None:
+                    ax_current.scatter(
+                        PCx, PCy, color=color_band_dict[band], alpha=0.5, label=label
+                    )
+                else:
+                    ax_current.scatter(PCx, PCy, color="yellow", alpha=0.4, label=label)
+                if x_limits is not None:
+                    ax_current.set_xlim(x_limits)
+                if y_limits is not None:
+                    ax_current.set_ylim(y_limits)
+                if set_ax_title:
+                    if band_map is None:
+                        ax_current.set_title(
+                            "PCs for " + str(band) + "-band", fontsize=20
+                        )
+                    else:
+                        ax_current.set_title(
+                            "PCs for " + str(band_map[band]) + "-band", fontsize=20
+                        )
+                if label != "":
+                    ax_current.legend(loc="lower left", fontsize=15)
+                ax_current.set_aspect("equal", "box")
+                # ax_current.axis('square')
+    fig.tight_layout()
+    return fig
+
+
+def plot_features_correlation(
+    features_df,
+    bands,
+    color_band_dict,
+    x_limits=None,
+    y_limits=None,
+    mark_xlabel=True,
+    mark_ylabel=True,
+    band_map=None,
+    set_ax_title=True,
+    num_pc_components=3,
+):
+    """
+    plots correlations between the PCs of each band (with the training set features)
+
+    features_df: dataframe of events of current class (KN and non-KN)
+    bands: bands for which plots are to be generated
+    color_band_dict:test colors to be used for corresponding bands
+    x_limits: x limits of the plot
+    y_limits: y limits of the plot
+    mark_xlabel: mark x label or not
+    mark_ylabel: to mark y label or not
+    band_map: renaming bands/filter/channel name in plots
+    set_ax_title: title of the axes ojbect on which plot is made
+    :return: figure with the plots
+    """
+    kn_df = features_df[features_df["y_true"] == 1]
+    non_kn_df = features_df[features_df["y_true"] == 0]
+
+    num_rows = len(bands)
+    num_cols = int(num_pc_components * (num_pc_components - 1) / 2)
+    fig, axs = plt.subplots(
+        num_rows, num_cols, figsize=(num_pc_components * 5, len(bands) * 5)
+    )
+    # fig.subplots_adjust(wspace=.5,hspace=.5)
+    plot_features_correlation_helper(
+        non_kn_df,
+        fig=fig,
+        band_map=band_map,
+        color_band_dict=None,
+        bands=bands,
+        x_limits=x_limits,
+        y_limits=y_limits,
+        mark_xlabel=mark_xlabel,
+        mark_ylabel=mark_ylabel,
+        set_ax_title=set_ax_title,
+        label="non-KN",
+    )
+    plot_features_correlation_helper(
+        kn_df,
+        fig=fig,
+        band_map=band_map,
+        color_band_dict=color_band_dict,
+        bands=bands,
+        x_limits=x_limits,
+        y_limits=y_limits,
+        mark_xlabel=mark_xlabel,
+        mark_ylabel=mark_ylabel,
+        set_ax_title=set_ax_title,
+        label="KN",
+    )
+    return fig
