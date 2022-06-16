@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from astropy.table import Table
 from src.Data import Data
@@ -165,12 +167,16 @@ def get_pcs(num_pc_components, pcs_choice="interpolated", normalize_pcs=True):
     data_dir = get_data_dir_path()
 
     if pcs_choice == "interpolated":
-        pcs_load = np.load(data_dir + "/interpolated_mixed_pcs.npy", allow_pickle=True)
+        pcs_load = np.load(
+            os.path.join(data_dir, "interpolated_mixed_pcs.npy"), allow_pickle=True
+        )
         return pcs_load
 
     if pcs_choice == "non-interpolated":
 
-        pcs_load = np.load(data_dir + "/mixed_pcs.npy", allow_pickle=True).item()
+        pcs_load = np.load(
+            os.path.join(data_dir, "mixed_pcs.npy"), allow_pickle=True
+        ).item()
         band_choice = "all"
 
         pc_out = pcs_load[band_choice]
