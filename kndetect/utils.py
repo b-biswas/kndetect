@@ -35,9 +35,9 @@ def load_pcs(fn=None, npcs=3):
 
     if fn is None:
         data_dir = get_data_dir_path()
-        fn = os.path.join(data_dir, "mixed_pcs.npy")
+        fn = os.path.join(data_dir, "interpolated_mixed_pcs.npy")
 
-    pcs = np.load(fn, allow_pickle=True).item()["all"][0:npcs]
+    pcs = np.load(fn, allow_pickle=True)[0:npcs]
     return pcs
 
 
