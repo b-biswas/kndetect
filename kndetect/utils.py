@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-import pandas as pd
 
 
 def get_data_dir_path():
@@ -24,28 +23,21 @@ def load_pcs(fn=None, npcs=3):
     Parameters
     ----------
     fn: str
-        Filename. This file should be known from all machines!
+        Filename. defaults to mixed_pcs.npy
     npcs: int
         Number of principal components to load
     Return
-    ----------
-    pcs: pd.DataFrame
-        All principal components to be considered.
-        keys should be PCs names (1, 2, 3, ...),
-        values their amplitude at each epoch in the grid.
-        Order of PCs when calling pcs.keys() is important.
+    ------
+    pcs: list
+        list of pc components
+
     """
 
     if fn is None:
         data_dir = get_data_dir_path()
-        fn = os.path.join(data_dir, "mixed_pcs.csv")
+        fn = os.path.join(data_dir, "mixed_pcs.npy")
 
-    comp = pd.read_csv(fn)
-    pcs = []
-    for i in range(npcs):
-        pcs.append(comp.iloc[i].values)
-
-    pcs = np.array(pcs)
+    pcs = np.load(fn, allow_pickle=True).item()["all"][0:npcs]
     return pcs
 
 
