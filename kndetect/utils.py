@@ -17,6 +17,20 @@ def get_data_dir_path():
     return data_dir
 
 
+def get_results_dir_path():
+    """Function to return path to the data folder of kndetect
+
+    Returns
+    -------
+    data_dir: str
+        path to data folder
+    """
+    curdir = os.path.dirname(os.path.abspath(__file__))
+    results_dir = os.path.join(curdir, "results")
+
+    return results_dir
+
+
 def load_pcs(fn=None, npcs=3):
     """Load PC from disk into a Pandas DataFrame
 
