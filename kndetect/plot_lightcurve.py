@@ -448,6 +448,7 @@ def plot_confusion_matrix(
     y_true,
     y_pred,
     cmap=LinearSegmentedColormap.from_list("", ["#FFFFFF", "#15284F"]),
+    save_fig_prefix=None,
 ):
     """
     This function prints and plots the confusion matrix.
@@ -503,6 +504,10 @@ def plot_confusion_matrix(
             )
     # fig.tight_layout()
     ax.axis("equal")
+
+    if save_fig_prefix is not None:
+
+        plt.savefig(os.path.join("results", save_fig_prefix, "confusion_matrix.pdf"))
 
 
 def plot_features_correlation_helper(
