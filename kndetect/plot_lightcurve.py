@@ -1,6 +1,9 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 from sklearn import metrics
 
@@ -306,7 +309,9 @@ def plot_predicted_bands(
     return fig
 
 
-def plot_contamination_statistics(ax, test_features_df, prediction_type_nos):
+def plot_contamination_statistics(
+    ax, test_features_df, prediction_type_nos, save_fig_prefix=None
+):
     """
     plot displaying total number of events and number of events correctly classified for each event type.
     Parameters
@@ -314,7 +319,17 @@ def plot_contamination_statistics(ax, test_features_df, prediction_type_nos):
     ax: matplotlib.axes
         axes on which plot is to be made
     """
-
+    sns.set_theme(
+        style={
+            "axes.grid": False,
+            "axes.labelcolor": "black",
+            "figure.facecolor": "1",
+            "xtick.color": "black",
+            "ytick.color": "black",
+            "text.color": "black",
+            "image.cmap": "viridis",
+        }
+    )
     performance_statistics_df = get_performance_statistics_df(
         test_features_df, prediction_type_nos
     )
@@ -365,7 +380,7 @@ def plot_contamination_statistics(ax, test_features_df, prediction_type_nos):
     for i, v in enumerate(col_type_nos):
         ax.text(
             performance_statistics_df[v].values[1] + 10,
-            i - 0.1,
+            i - 0.2,
             f"{performance_statistics_df[v].values[0] / performance_statistics_df[v].values[1] * 100:.2f}%",
             color="#15284F",
             fontweight="bold",
@@ -380,6 +395,11 @@ def plot_contamination_statistics(ax, test_features_df, prediction_type_nos):
         prop={"size": 25},
     )
     plt.xlim(right=np.max(performance_statistics_df.loc[1].values) * 125 / 100)
+    if save_fig_prefix is not None:
+        plt.savefig(
+            os.path.join("results", save_fig_prefix, "contamination_plot.pdf"),
+            bbox_inches="tight",
+        )
 
 
 def get_performance_statistics_df(test_features_df, prediction_type_nos):
@@ -428,6 +448,7 @@ def plot_confusion_matrix(
     y_true,
     y_pred,
     cmap=LinearSegmentedColormap.from_list("", ["#FFFFFF", "#15284F"]),
+    save_fig_prefix=None,
 ):
     """
     This function prints and plots the confusion matrix.
@@ -483,3 +504,416 @@ def plot_confusion_matrix(
             )
     # fig.tight_layout()
     ax.axis("equal")
+
+    if save_fig_prefix is not None:
+
+        plt.savefig(os.path.join("results", save_fig_prefix, "confusion_matrix.pdf"))
+
+
+def plot_features_correlation_helper(
+    class_features_df,
+    bands,
+    num_pc_components,
+    color,
+    fig=None,
+    x_limits=None,
+    y_limits=None,
+    mark_xlabel=False,
+    mark_ylabel=False,
+    band_map=None,
+    marker="o",
+    set_ax_title=False,
+    label="",
+):
+    """
+    plots correlations between PCs of each band for only 1 class of data: ex KN
+    class_features_df: dataframe of events of current class (KN and non-KN)
+    bands: bands for which plots are to be generated
+    color: colors make the plot
+    fig: fig on which plot is generated. If None, new fig is created
+    x_limits: x limits of the plot
+    y_limits: y limits of the plot
+    mark_xlabel: mark x label or not
+    mark_ylabel: to mark y label or not
+    band_map: renaming bands/filter/channel name in plots
+    set_ax_title: title of the axes ojbect on which plot is made
+    label: string label of the current class (ex "KN" or "non-KN")
+    :return: figure with the plots
+    """
+    num_rows = len(bands)
+    num_cols = int(num_pc_components * (num_pc_components - 1) / 2)
+    if fig is None:
+        fig, axs = plt.subplots(
+            num_rows, num_cols, figsize=(num_rows * 5, num_cols * 5)
+        )
+        # fig.subplots_adjust(wspace=.5,hspace=.5)
+        ax_list = fig.axes
+    else:
+        ax_list = fig.axes
+
+    for i, band in enumerate(bands):
+        for x in range(num_pc_components):
+            for y in range(x):
+                ax_current = ax_list[int(i * num_cols + (x - 1) * (x) / 2 + y)]
+                colx_name = "coeff" + str(x + 1) + "_" + str(band)
+                coly_name = "coeff" + str(y + 1) + "_" + str(band)
+                if mark_xlabel:
+                    ax_current.set_xlabel("PC" + str(x + 1), fontsize=20)
+                if mark_ylabel:
+                    ax_current.set_ylabel("PC" + str(y + 1), fontsize=20)
+                PCx = class_features_df[colx_name].values
+                PCy = class_features_df[coly_name].values
+
+                ax_current.scatter([], [], label=label, color=color)
+
+                ax_current.scatter(
+                    PCx,
+                    PCy,
+                    color=color,
+                    alpha=0.3,
+                    marker=marker,
+                )
+                ax_current.tick_params(axis="both", labelsize=14)
+
+                if x_limits is not None:
+                    ax_current.set_xlim(x_limits)
+                if y_limits is not None:
+                    ax_current.set_ylim(y_limits)
+                if set_ax_title:
+                    if band_map is None:
+                        ax_current.set_title(
+                            "PCs for " + str(band) + "-band", fontsize=20
+                        )
+                    else:
+                        ax_current.set_title(
+                            "PCs for " + str(band_map[band]) + "-band", fontsize=20
+                        )
+
+                if label != "":
+                    if band_map is None:
+                        title = "Correlation in " + str(band) + "-band"
+                    else:
+                        title = "Correlation in " + str(band_map[band]) + "-band"
+
+                    ax_current.legend(
+                        loc="lower left", fontsize=14, title=title, title_fontsize=14
+                    )
+                ax_current.set_aspect("equal", "box")
+                # ax_current.axis('square')
+    fig.tight_layout()
+    return fig
+
+
+def plot_features_correlation(
+    features_df,
+    bands,
+    color_dict=None,
+    x_limits=None,
+    y_limits=None,
+    mark_xlabel=True,
+    mark_ylabel=True,
+    band_map=None,
+    set_ax_title=False,
+    num_kn_points=None,
+    num_non_kn_points=None,
+    num_pc_components=3,
+    save_fig_prefix=None,
+):
+    """
+    plots correlations between the PCs of each band (with the training set features)
+
+    features_df: dataframe of events of current class (KN and non-KN)
+    bands: bands for which plots are to be generated
+    color_dict:test colors to be used for corresponding classes
+    x_limits: x limits of the plot
+    y_limits: y limits of the plot
+    mark_xlabel: mark x label or not
+    mark_ylabel: to mark y label or not
+    band_map: renaming bands/filter/channel name in plots
+    set_ax_title: title of the axes ojbect on which plot is made
+    :return: figure with the plots
+    """
+    sns.set_theme(
+        style={
+            "axes.grid": True,
+            "axes.labelcolor": "black",
+            "figure.facecolor": "1",
+            "xtick.color": "black",
+            "ytick.color": "black",
+            "text.color": "black",
+            "image.cmap": "viridis",
+        }
+    )
+    if color_dict is None:
+        color_dict = {"non_kn": "#F5622E", "kn": "#15284F"}
+
+    kn_df = features_df[features_df["y_true"] == 1]
+    non_kn_df = features_df[features_df["y_true"] == 0]
+
+    if (num_kn_points is not None) & (num_kn_points < len(kn_df)):
+        mask = np.zeros((len(kn_df)), dtype=bool)
+        mask[0:num_kn_points] = True
+        np.random.shuffle(mask)
+        kn_df = kn_df[mask]
+
+    non_kn_df = features_df[features_df["y_true"] == 0]
+
+    if (num_non_kn_points is not None) & (num_non_kn_points < len(non_kn_df)):
+        mask = np.zeros((len(non_kn_df)), dtype=bool)
+        mask[0:num_non_kn_points] = True
+        np.random.shuffle(mask)
+        non_kn_df = non_kn_df[mask]
+
+    num_rows = len(bands)
+    num_cols = int(num_pc_components * (num_pc_components - 1) / 2)
+    fig, axs = plt.subplots(
+        num_rows, num_cols, figsize=(num_pc_components * 5, len(bands) * 5)
+    )
+    # fig.subplots_adjust(wspace=.5,hspace=.5)
+    plot_features_correlation_helper(
+        non_kn_df,
+        fig=fig,
+        band_map=band_map,
+        color=color_dict["non_kn"],
+        bands=bands,
+        x_limits=x_limits,
+        y_limits=y_limits,
+        mark_xlabel=mark_xlabel,
+        mark_ylabel=mark_ylabel,
+        set_ax_title=set_ax_title,
+        label="non-KN",
+        marker="o",
+        num_pc_components=num_pc_components,
+    )
+    plot_features_correlation_helper(
+        kn_df,
+        fig=fig,
+        band_map=band_map,
+        color=color_dict["kn"],
+        bands=bands,
+        x_limits=x_limits,
+        y_limits=y_limits,
+        mark_xlabel=mark_xlabel,
+        mark_ylabel=mark_ylabel,
+        set_ax_title=set_ax_title,
+        label="KN",
+        marker="v",
+        num_pc_components=num_pc_components,
+    )
+
+    if save_fig_prefix is not None:
+        plt.savefig(os.path.join("results", save_fig_prefix, "features_corrlation.pdf"))
+    return fig
+
+
+def plot_band_correlation_helper(
+    current_class_df,
+    bands,
+    color=None,
+    fig=None,
+    x_limits=None,
+    y_limits=None,
+    mark_xlabel=False,
+    mark_ylabel=False,
+    band_map=None,
+    set_ax_title=False,
+    label="",
+    marker=None,
+    pc_names=None,
+    num_pc_components=3,
+):
+    """
+    current_class_df: dataframe of events of current class (KN and non-KN)
+    bands: bands for which plots are to be generated
+    color: color for the class
+    fig: fig on which plot is generated. If None, new fig is created
+    x_limits: x limits of the plot
+    y_limits: y limits of the plot
+    mark_xlabel: mark x label or not
+    mark_ylabel: to mark y label or not
+    band_map: renaming bands/filter/channel name in plots
+    set_ax_title: title of the axes ojbect on which plot is made
+    label: string label of the current class (ex "KN" or "non-KN")
+    num_pc_components: number of pcs
+    :return: figure with the plots
+    """
+    num_rows = int(len(bands) * (len(bands) - 1) / 2)
+    num_cols = num_pc_components
+    if fig is None:
+        fig, axs = plt.subplots(
+            num_rows, num_cols, figsize=(num_pc_components * 5, len(bands) * 5)
+        )
+        fig.subplots_adjust(wspace=0.5, hspace=0.5)
+        ax_list = fig.axes
+    else:
+        ax_list = fig.axes
+    for i in range(num_pc_components):
+        # print("pc "+str(i))
+        for x, band in enumerate(bands):
+            for y in range(x):
+                x_band = bands[x]
+                y_band = bands[y]
+                # print("x " +str(x))
+                # print("y " +str(y))
+                # print(int(i*len(bands)*(len(bands)-1)/2 + (x-1)*(x-2)/2 +y))
+                ax_current = ax_list[int(i * num_rows + (x - 1) * (x - 2) / 2 + y)]
+                colx_name = "coeff" + str(i + 1) + "_" + str(x_band)
+                coly_name = "coeff" + str(i + 1) + "_" + str(y_band)
+                # print(coeff_plot_data)
+                PCx = current_class_df[colx_name].values
+                PCy = current_class_df[coly_name].values
+
+                ax_current.scatter(
+                    PCx,
+                    PCy,
+                    color=color,
+                    marker=marker,
+                    alpha=0.3,
+                )
+                ax_current.scatter([], [], label=label, color=color)
+
+                if pc_names is None:
+                    title = "Correlation for PC " + str(i + 1)
+                else:
+                    title = "Correlation for " + pc_names[i]
+
+                ax_current.legend(
+                    loc="lower left", fontsize=14, title=title, title_fontsize=14
+                )
+
+                ax_current.tick_params(axis="both", labelsize=14)
+
+                if x_limits is not None:
+                    ax_current.set_xlim(x_limits)
+                if y_limits is not None:
+                    ax_current.set_ylim(y_limits)
+
+                if band_map is None:
+                    if mark_xlabel:
+                        ax_current.set_xlabel(x_band + " band", fontsize=20)
+                    if mark_ylabel:
+                        ax_current.set_ylabel(y_band + " band", fontsize=20)
+                else:
+                    if mark_xlabel:
+                        ax_current.set_xlabel(band_map[x_band] + " band", fontsize=20)
+                    if mark_ylabel:
+                        ax_current.set_ylabel(band_map[y_band] + " band", fontsize=20)
+
+                if set_ax_title:
+                    ax_current.set_title("correlation for PC" + str(i + 1), fontsize=20)
+
+                ax_current.set_aspect("equal", "box")
+
+    fig.tight_layout()
+    return fig
+
+
+def plot_band_correlation(
+    features_df,
+    bands,
+    color_dict=None,
+    x_limits=None,
+    y_limits=None,
+    mark_xlabel=True,
+    mark_ylabel=True,
+    band_map=None,
+    set_ax_title=False,
+    pc_names=None,
+    num_kn_points=None,
+    num_non_kn_points=None,
+    num_pc_components=3,
+    save_fig_prefix=None,
+):
+    """
+    plots correlations between 2 bands for each PC (with the training set features)
+
+    bands: bands among which correlation is to be plotted
+    color_dict: colors to be used for corresponding classes
+    fig: fig on which plot is generated. If None, new fig is created
+    x_limits: x limits of the plot
+    y_limits: y limits of the plot
+    mark_xlabel: mark x label or not
+    mark_ylabel: to mark y label or not
+    band_map: renaming bands/filter/channel name in plots
+    set_ax_title: title of the axes ojbect on which plot is made
+    num_pc_components: number of pcs
+    :return: figure on which the correlations are plotted
+    """
+
+    sns.set_theme(
+        style={
+            "axes.grid": True,
+            "axes.labelcolor": "black",
+            "figure.facecolor": "1",
+            "xtick.color": "black",
+            "ytick.color": "black",
+            "text.color": "black",
+            "image.cmap": "viridis",
+        }
+    )
+
+    if color_dict is None:
+        color_dict = {"non_kn": "#F5622E", "kn": "#15284F"}
+
+    kn_df = features_df[features_df["y_true"] == 1]
+    if (num_kn_points is not None) & (num_kn_points < len(kn_df)):
+        mask = np.zeros((len(kn_df)), dtype=bool)
+        mask[0:num_kn_points] = True
+        np.random.shuffle(mask)
+        kn_df = kn_df[mask]
+
+    non_kn_df = features_df[features_df["y_true"] == 0]
+
+    if (num_non_kn_points is not None) & (num_non_kn_points < len(non_kn_df)):
+        mask = np.zeros((len(non_kn_df)), dtype=bool)
+        mask[0:num_non_kn_points] = True
+        np.random.shuffle(mask)
+        non_kn_df = non_kn_df[mask]
+
+    num_rows = int(len(bands) * (len(bands) - 1) / 2)
+    num_cols = num_pc_components
+
+    fig, axs = plt.subplots(num_rows, num_cols, figsize=(num_cols * 5, num_rows * 5))
+    # fig.subplots_adjust(wspace=space_between_axes,hspace=space_between_axes)
+    plot_band_correlation_helper(
+        non_kn_df,
+        bands=bands,
+        fig=fig,
+        band_map=band_map,
+        x_limits=x_limits,
+        y_limits=y_limits,
+        mark_xlabel=mark_xlabel,
+        mark_ylabel=mark_ylabel,
+        set_ax_title=set_ax_title,
+        label="non-KN",
+        pc_names=pc_names,
+        marker="o",
+        color=color_dict["non_kn"],
+        num_pc_components=num_pc_components,
+    )
+    plot_band_correlation_helper(
+        kn_df,
+        bands=bands,
+        fig=fig,
+        band_map=band_map,
+        x_limits=x_limits,
+        y_limits=y_limits,
+        mark_xlabel=mark_xlabel,
+        mark_ylabel=mark_ylabel,
+        set_ax_title=set_ax_title,
+        label="KN",
+        pc_names=pc_names,
+        marker="v",
+        color=color_dict["kn"],
+        num_pc_components=num_pc_components,
+    )
+    if save_fig_prefix is not None:
+
+        plt.savefig(
+            os.path.join("results", save_fig_prefix, "band_correlation_plot.pdf")
+        )
+    # plt.xlabel(" correlation ")
+    leg = plt.legend()
+    for lh in leg.legendHandles:
+        lh.set_alpha(1)
+    return fig
