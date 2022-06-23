@@ -166,7 +166,7 @@ def get_event_type(
     return event_types
 
 
-def extract_mimic_alerts_region(lc, flux_lim=None, current_date=None, duration=None):
+def extract_mimic_alerts_region(lc, flux_lim=None, current_date=None, duration=30):
     """
     returns 30 days of alerts data, form a randomly selected point
 
