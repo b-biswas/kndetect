@@ -162,6 +162,8 @@ def plot_predicted_bands(
     fig=None,
     duration=None,
     band_map=None,
+    plot_unused_points=True,
+    legend_title="",
 ):
     """
     plot of predictions of each band
@@ -197,17 +199,18 @@ def plot_predicted_bands(
     """
     bands = all_band_coeff_dict.keys()
 
-    fig = plot_light_curve(
-        lc=lc,
-        bands=bands,
-        fig=fig,
-        color_band_dict=color_band_dict,
-        alpha=0.3,
-        mark_label=True,
-        plot_points=True,
-        label_postfix="light curve",
-        band_map=band_map,
-    )
+    if plot_unused_points:
+        fig = plot_light_curve(
+            lc=lc,
+            bands=bands,
+            fig=fig,
+            color_band_dict=color_band_dict,
+            alpha=0.3,
+            mark_label=True,
+            plot_points=True,
+            label_postfix="light curve",
+            band_map=band_map,
+        )
 
     prediction_start_date = np.inf
     prediction_end_date = -np.inf
@@ -303,7 +306,7 @@ def plot_predicted_bands(
         ax.legend(loc="upper right", fontsize=17, title=title, title_fontsize=17)
     else:
         ax.legend(loc="upper right", fontsize=17)
-    ax.legend()
+    ax.legend(fontsize=17, title=legend_title, title_fontsize=22)
     plt.tight_layout()
 
     return fig
@@ -396,6 +399,10 @@ def plot_contamination_statistics(
     )
     plt.xlim(right=np.max(performance_statistics_df.loc[1].values) * 125 / 100)
     if save_fig_prefix is not None:
+        plt.savefig(
+            os.path.join("results", save_fig_prefix, "contamination_plot"),
+            bbox_inches="tight",
+        )
         plt.savefig(
             os.path.join("results", save_fig_prefix, "contamination_plot.pdf"),
             bbox_inches="tight",
@@ -507,7 +514,14 @@ def plot_confusion_matrix(
 
     if save_fig_prefix is not None:
 
-        plt.savefig(os.path.join("results", save_fig_prefix, "confusion_matrix.pdf"))
+        plt.savefig(
+            os.path.join("results", save_fig_prefix, "confusion_matrix"),
+            bbox_inches="tight",
+        )
+        plt.savefig(
+            os.path.join("results", save_fig_prefix, "confusion_matrix.pdf"),
+            bbox_inches="tight",
+        )
 
 
 def plot_features_correlation_helper(
@@ -564,7 +578,7 @@ def plot_features_correlation_helper(
                 PCx = class_features_df[colx_name].values
                 PCy = class_features_df[coly_name].values
 
-                ax_current.scatter([], [], label=label, color=color)
+                ax_current.scatter([], [], label=label, marker=marker, color=color)
 
                 ax_current.scatter(
                     PCx,
@@ -702,7 +716,14 @@ def plot_features_correlation(
     )
 
     if save_fig_prefix is not None:
-        plt.savefig(os.path.join("results", save_fig_prefix, "features_corrlation.pdf"))
+        plt.savefig(
+            os.path.join("results", save_fig_prefix, "features_corrlation"),
+            bbox_inches="tight",
+        )
+        plt.savefig(
+            os.path.join("results", save_fig_prefix, "features_corrlation.pdf"),
+            bbox_inches="tight",
+        )
     return fig
 
 
@@ -770,7 +791,7 @@ def plot_band_correlation_helper(
                     marker=marker,
                     alpha=0.3,
                 )
-                ax_current.scatter([], [], label=label, color=color)
+                ax_current.scatter([], [], label=label, marker=marker, color=color)
 
                 if pc_names is None:
                     title = "Correlation for PC " + str(i + 1)
@@ -910,7 +931,12 @@ def plot_band_correlation(
     if save_fig_prefix is not None:
 
         plt.savefig(
-            os.path.join("results", save_fig_prefix, "band_correlation_plot.pdf")
+            os.path.join("results", save_fig_prefix, "band_correlation_plot.pdf"),
+            bbox_inches="tight",
+        )
+        plt.savefig(
+            os.path.join("results", save_fig_prefix, "band_correlation_plot"),
+            bbox_inches="tight",
         )
     # plt.xlabel(" correlation ")
     leg = plt.legend()
