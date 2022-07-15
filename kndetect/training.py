@@ -73,7 +73,7 @@ def train_classifier(features_df):
     feature_names = get_feature_names()
     assert set(feature_names + ["y_true"]).issubset(features_df.columns)
 
-    clf = RandomForestClassifier(n_estimators=30, max_depth=13)
+    clf = RandomForestClassifier(n_estimators=30, max_depth=13, class_weight="balanced")
 
     # features_df = features_df[filter_no_coeff_events(features_df)]
 
