@@ -73,7 +73,26 @@ def train_classifier(features_df):
     feature_names = get_feature_names()
     assert set(feature_names + ["y_true"]).issubset(features_df.columns)
 
-    clf = RandomForestClassifier(n_estimators=30, max_depth=13, class_weight="balanced")
+    clf = RandomForestClassifier(
+        bootstrap=True,
+        ccp_alpha=0.0,
+        class_weight=None,
+        criterion="gini",
+        max_depth=42,
+        max_features="auto",
+        max_leaf_nodes=None,
+        max_samples=None,
+        min_impurity_decrease=0.0,
+        min_samples_leaf=1,
+        min_samples_split=2,
+        min_weight_fraction_leaf=0.0,
+        n_estimators=30,
+        n_jobs=None,
+        oob_score=False,
+        random_state=None,
+        verbose=0,
+        warm_start=False,
+    )
 
     # features_df = features_df[filter_no_coeff_events(features_df)]
 
