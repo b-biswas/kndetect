@@ -7,9 +7,10 @@ requirements = [
     "matplotlib",
     "numpy",
     "pandas",
-    "scikit-learn",
+    "scikit-learn==1.0.2",
     "astropy",
     "tqdm",
+    "actsnclass==1.2",
 ]
 
 setup(
