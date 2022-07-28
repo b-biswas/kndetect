@@ -1,3 +1,4 @@
+actsnclass==1.2
 astropy
 matplotlib
 numpy
