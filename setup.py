@@ -10,6 +10,7 @@ requirements = [
     "scikit-learn",
     "astropy",
     "tqdm",
+    "actsnclass==1.2",
 ]
 
 setup(
