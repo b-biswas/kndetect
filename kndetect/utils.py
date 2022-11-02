@@ -79,7 +79,7 @@ def snana_ob_type_name(type_no: int):
     if type_no == 150:
         return "150: KN GW170817"
     if type_no == 151:
-        return "151: KN Karsen 2017"
+        return "151: KN Kasen 2017"
     if type_no == 160:
         return "160: Superluminous SN"
     if type_no == 161:

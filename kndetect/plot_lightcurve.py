@@ -371,7 +371,7 @@ def plot_contamination_statistics(
         pred_col_names,
         performance_statistics_df[prediction_type_nos].loc[0],
         alpha=1,
-        color="#3C8DFF",
+        color="#15284F",
         ec="black",
         label="Correct KN",
     )
@@ -385,8 +385,7 @@ def plot_contamination_statistics(
             performance_statistics_df[v].values[1] + 10,
             i - 0.2,
             f"{performance_statistics_df[v].values[0] / performance_statistics_df[v].values[1] * 100:.2f}%",
-            color="#15284F",
-            fontweight="bold",
+            color="black",
             fontsize=20,
         )
     ax.legend(
@@ -572,9 +571,9 @@ def plot_features_correlation_helper(
                 colx_name = "coeff" + str(x + 1) + "_" + str(band)
                 coly_name = "coeff" + str(y + 1) + "_" + str(band)
                 if mark_xlabel:
-                    ax_current.set_xlabel("PC" + str(x + 1), fontsize=20)
+                    ax_current.set_xlabel(f"$c_{x + 1:d}$", fontsize=20)
                 if mark_ylabel:
-                    ax_current.set_ylabel("PC" + str(y + 1), fontsize=20)
+                    ax_current.set_ylabel(f"$c_{y + 1:d}$", fontsize=20)
                 PCx = class_features_df[colx_name].values
                 PCy = class_features_df[coly_name].values
 
@@ -794,7 +793,7 @@ def plot_band_correlation_helper(
                 ax_current.scatter([], [], label=label, marker=marker, color=color)
 
                 if pc_names is None:
-                    title = "Correlation for PC " + str(i + 1)
+                    title = f"Correlation for $c_{i + 1:d}$"
                 else:
                     title = "Correlation for " + pc_names[i]
 
