@@ -268,7 +268,11 @@ def plot_predicted_bands(
             time_data = []
 
         plt.plot(
-            time_data, predicted_lc, color=color_band_dict[band], linestyle=linestyle
+            time_data,
+            predicted_lc,
+            color=color_band_dict[band],
+            linestyle=linestyle,
+            label=band_map[band] + " prediction",
         )
 
     if prediction_made and axes_lims:
@@ -303,10 +307,10 @@ def plot_predicted_bands(
     plt.xlabel("MJD", fontsize=30)
     plt.ylabel("FLUXCAL", fontsize=30)
     if title is not None:
-        ax.legend(loc="upper right", fontsize=17, title=title, title_fontsize=17)
+        ax.legend(loc="upper left", fontsize=15, title=title, title_fontsize=15)
     else:
-        ax.legend(loc="upper right", fontsize=17)
-    ax.legend(fontsize=17, title=legend_title, title_fontsize=22)
+        ax.legend(loc="upper left", fontsize=15)
+    ax.legend(loc="upper left", fontsize=17, title=legend_title, title_fontsize=22)
     plt.tight_layout()
 
     return fig
@@ -783,12 +787,14 @@ def plot_band_correlation_helper(
                 PCx = current_class_df[colx_name].values
                 PCy = current_class_df[coly_name].values
 
-                ax_current.scatter(
-                    PCx,
-                    PCy,
+                sns.kdeplot(
+                    x=PCx,
+                    y=PCy,
                     color=color,
                     marker=marker,
-                    alpha=0.3,
+                    alpha=0.9,
+                    ax=ax_current,
+                    levels=4,
                 )
                 ax_current.scatter([], [], label=label, marker=marker, color=color)
 
