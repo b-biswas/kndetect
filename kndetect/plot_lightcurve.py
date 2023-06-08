@@ -250,8 +250,9 @@ def plot_predicted_bands(
                 band_map=band_map,
             )
 
-            predicted_lc = calc_prediction(all_band_coeff_dict[band], pcs) * np.amax(
-                band_df["FLUXCAL"].values
+            predicted_lc = (
+                calc_prediction(all_band_coeff_dict[band], pcs)
+                * band_df["FLUXCAL"].iloc[max_loc]
             )
             time_data = (
                 np.linspace(-50, 50, num=num_prediction_points, endpoint=True)
