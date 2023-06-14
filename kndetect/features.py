@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
-from tqdm import tqdm
 
 from kndetect.utils import extract_mimic_alerts_region
+
+# from tqdm import tqdm
 
 
 def get_feature_names(npcs=3):
@@ -341,7 +342,7 @@ def extract_features_all_lightcurves(lc_df, key, pcs, filters, mimic_alerts=Fals
     features_df["key"] = []
     current_dates = []
 
-    for object_id in tqdm(object_ids):
+    for object_id in object_ids:
         object_lc = lc_df[lc_df[key] == object_id]
         object_lc = object_lc[object_lc["FLUXCAL"] == object_lc["FLUXCAL"]]
         if mimic_alerts:
